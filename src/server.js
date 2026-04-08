@@ -10,6 +10,9 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy (required on Render/Railway/Heroku behind reverse proxy)
+app.set("trust proxy", 1);
+
 // ── Global middleware ────────────────────────
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
