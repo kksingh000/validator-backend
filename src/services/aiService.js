@@ -1,6 +1,6 @@
 const gemini = require("../config/gemini");
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 const MAX_DESCRIPTION_CHARS = 1400;
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and venture capital advisor.
