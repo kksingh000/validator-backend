@@ -1,0 +1,18 @@
+{
+  "name": "validator",
+  "version": "1.0.0",
+  "description": "Startup Idea Validator API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^6.7.0",
+    "openai": "^4.0.0",
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
