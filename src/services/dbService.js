@@ -2,6 +2,19 @@ const supabase = require("../config/supabase");
 
 const TABLE = "ideas";
 
+// Supabase may return JSONB analysis as a string — ensure it's always an object
+function parseAnalysis(idea) {
+  if (!idea) return idea;
+  if (idea.analysis && typeof idea.analysis === "string") {
+    try {
+      idea.analysis = JSON.parse(idea.analysis);
+    } catch {
+      idea.analysis = null;
+    }
+  }
+  return idea;
+}
+
 // ---------- Create ----------
 async function createIdea({ title, description, industry, target_market }) {
   const { data, error } = await supabase
@@ -33,7 +46,7 @@ async function updateIdeaStatus(id, status, analysis = null) {
     .single();
 
   if (error) throw error;
-  return data;
+  return parseAnalysis(data);
 }
 
 // ---------- Get all ----------
@@ -72,7 +85,7 @@ async function getIdeaById(id) {
     if (error.code === "PGRST116") return null;
     throw error;
   }
-  return data;
+  return parseAnalysis(data);
 }
 
 // ---------- Delete ----------

@@ -1,34 +1,34 @@
-const openai = require("../config/openai");
+const gemini = require("../config/gemini");
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
-const MAX_TOKENS = parseInt(process.env.OPENAI_MAX_TOKENS, 10) || 1500;
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const MAX_DESCRIPTION_CHARS = 1400;
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and venture capital advisor.
-Analyze the idea and return only valid JSON with this schema. Do not include markdown or code fences.`;
+Analyze the given startup idea thoroughly and return a structured JSON analysis.
+Be specific, realistic, and data-driven. Tailor every field to the actual idea — do NOT use generic placeholders.`;
 
 const SCHEMA_PROMPT = `
-Return exactly this schema:
+Return ONLY valid JSON matching this exact schema (no markdown, no code fences):
 {
-  "problem_summary": "string — 2-3 sentence summary of the problem being solved",
+  "problem_summary": "string — 2-3 sentence summary of the specific problem being solved",
   "customer_persona": {
-    "name": "string — fictional persona name",
+    "name": "string — fictional persona name relevant to the target market",
     "age_range": "string",
     "occupation": "string",
-    "pain_points": ["string"],
-    "goals": ["string"],
+    "pain_points": ["string — 3 specific pain points"],
+    "goals": ["string — 2-3 specific goals"],
     "demographics": "string — short demographic overview"
   },
   "market_overview": {
-    "market_size": "string — estimated TAM / SAM / SOM",
-    "growth_rate": "string",
-    "trends": ["string"],
+    "market_size": "string — estimated TAM / SAM / SOM with dollar figures",
+    "growth_rate": "string — CAGR percentage",
+    "trends": ["string — 3 current market trends"],
     "summary": "string — 2-3 sentence market narrative"
   },
   "competitors": [
     {
-      "name": "string",
-      "description": "string",
+      "name": "string — real company name",
+      "description": "string — what they do",
       "strengths": ["string"],
       "weaknesses": ["string"]
     }
@@ -39,14 +39,14 @@ Return exactly this schema:
     "database": ["string"],
     "infrastructure": ["string"],
     "ai_ml": ["string"],
-    "rationale": "string"
+    "rationale": "string — why this stack fits the idea"
   },
   "risk_level": "Low | Medium | High",
-  "risk_factors": ["string"],
-  "profitability_score": 0-100,
-  "profitability_rationale": "string",
-  "recommendations": ["string"],
-  "verdict": "string — one-paragraph final verdict"
+  "risk_factors": ["string — 3 specific risk factors"],
+  "profitability_score": "integer 0-100",
+  "profitability_rationale": "string — 2-3 sentences explaining the score",
+  "recommendations": ["string — 4 actionable recommendations"],
+  "verdict": "string — one-paragraph final assessment with clear go/no-go signal"
 }`;
 
 function trimText(text, maxLength) {
@@ -135,38 +135,37 @@ function getMockAnalysis(idea) {
 }
 
 async function analyzeIdea(idea) {
-  if (!openai) {
-    console.log("ℹ️  Using mock analysis (no OpenAI key configured)");
+  if (!gemini) {
+    console.log("ℹ️  Using mock analysis (no Gemini API key configured)");
     return getMockAnalysis(idea);
   }
 
-  const completion = await openai.chat.completions.create({
+  console.log(`🤖 Calling Gemini (${MODEL}) for: "${idea.title}"`);
+
+  const prompt = `${SYSTEM_PROMPT}\n\n${SCHEMA_PROMPT}\n\n${buildUserPrompt(idea)}`;
+
+  const response = await gemini.models.generateContent({
     model: MODEL,
-    temperature: 0.45,
-    top_p: 0.95,
-    max_tokens: MAX_TOKENS,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: SCHEMA_PROMPT },
-      { role: "user", content: buildUserPrompt(idea) },
-    ],
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      temperature: 0.45,
+      topP: 0.95,
+    },
   });
 
-  const raw = completion.choices?.[0]?.message?.content;
+  const raw = response.text;
 
   if (!raw) {
-    throw new Error("AI response was empty.");
-  }
-
-  if (typeof raw === "object") {
-    return raw;
+    throw new Error("Gemini response was empty.");
   }
 
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    console.log(`✅ Gemini analysis complete for: "${idea.title}"`);
+    return parsed;
   } catch (err) {
-    console.error("Failed to parse OpenAI JSON response:", raw);
+    console.error("Failed to parse Gemini JSON response:", raw);
     throw new Error("AI returned invalid JSON — please retry.");
   }
 }
