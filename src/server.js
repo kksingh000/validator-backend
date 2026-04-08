@@ -42,6 +42,16 @@ app.get("/", (_req, res) => {
   });
 });
 
+// ── Debug: check env vars are loaded ─────────
+app.get("/debug/env", (_req, res) => {
+  res.json({
+    gemini_key_set: !!process.env.GEMINI_API_KEY,
+    gemini_key_prefix: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.slice(0, 8) + "..." : "NOT SET",
+    supabase_url_set: !!process.env.SUPABASE_URL,
+    node_env: process.env.NODE_ENV || "not set",
+  });
+});
+
 // ── Routes ───────────────────────────────────
 app.use("/api/ideas", ideasRouter);
 
