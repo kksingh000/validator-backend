@@ -138,15 +138,17 @@ async function retryAnalysis(req, res) {
       const completed = await db.updateIdeaStatus(id, "completed", analysis);
       return res.json({ success: true, data: completed });
     } catch (aiErr) {
+      console.error("retryAnalysis AI error:", aiErr);
       await db.updateIdeaStatus(id, "failed");
       return res.status(500).json({
         success: false,
         error: "AI analysis failed. Try again later.",
+        debug_error: aiErr.message || String(aiErr),
       });
     }
   } catch (err) {
     console.error("retryAnalysis error:", err);
-    return res.status(500).json({ success: false, error: "Internal server error." });
+    return res.status(500).json({ success: false, error: "Internal server error.", debug_error: err.message });
   }
 }
 
