@@ -141,38 +141,32 @@ async function analyzeIdea(idea) {
   }
 
   console.log(`🤖 Calling Gemini (${MODEL}) for: "${idea.title}"`);
-  console.log(`🔑 API key present: ${!!process.env.GEMINI_API_KEY}`);
 
   const prompt = `${SYSTEM_PROMPT}\n\n${SCHEMA_PROMPT}\n\n${buildUserPrompt(idea)}`;
 
+  const response = await gemini.generateContent({
+    model: MODEL,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      temperature: 0.45,
+      topP: 0.95,
+    },
+  });
+
+  const raw = response.text;
+
+  if (!raw) {
+    throw new Error("Gemini response was empty.");
+  }
+
   try {
-    const response = await gemini.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        temperature: 0.45,
-        topP: 0.95,
-      },
-    });
-
-    const raw = response.text;
-
-    if (!raw) {
-      throw new Error("Gemini response was empty.");
-    }
-
-    try {
-      const parsed = JSON.parse(raw);
-      console.log(`✅ Gemini analysis complete for: "${idea.title}"`);
-      return parsed;
-    } catch (err) {
-      console.error("Failed to parse Gemini JSON response:", raw);
-      throw new Error("AI returned invalid JSON — please retry.");
-    }
+    const parsed = JSON.parse(raw);
+    console.log(`✅ Gemini analysis complete for: "${idea.title}"`);
+    return parsed;
   } catch (err) {
-    console.error(`❌ Gemini API error:`, err.message || err);
-    throw err;
+    console.error("Failed to parse Gemini JSON response:", raw);
+    throw new Error("AI returned invalid JSON — please retry.");
   }
 }
 
